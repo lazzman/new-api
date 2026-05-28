@@ -25,6 +25,7 @@ import { z } from 'zod'
 // Usage log schema
 export const usageLogSchema = z.object({
   id: z.number(),
+  log_id: z.number().optional().default(0),
   user_id: z.number(),
   created_at: z.number(),
   type: z.number(),
@@ -45,6 +46,7 @@ export const usageLogSchema = z.object({
   other: z.string().default(''),
   request_id: z.string().default(''),
   upstream_request_id: z.string().default(''),
+  has_audit: z.boolean().default(false),
 })
 
 export type UsageLog = z.infer<typeof usageLogSchema>

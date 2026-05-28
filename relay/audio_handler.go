@@ -1,12 +1,15 @@
 package relay
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/QuantumNous/new-api/common"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	relayconstant "github.com/QuantumNous/new-api/relay/constant"
 	"github.com/QuantumNous/new-api/relay/helper"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/types"
@@ -42,6 +45,15 @@ func AudioHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 	ioReader, err := adaptor.ConvertAudioRequest(c, info, *request)
 	if err != nil {
 		return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
+	}
+	if info.RelayMode == relayconstant.RelayModeAudioSpeech {
+		bodyBytes, readErr := io.ReadAll(ioReader)
+		if readErr != nil {
+			return types.NewError(readErr, types.ErrorCodeReadRequestBodyFailed, types.ErrOptionWithSkipRetry())
+		}
+		common.StoreLogAuditRequestBody(c, bodyBytes)
+		ioReader = bytes.NewReader(bodyBytes)
+		service.StoreRelayLogAuditSource(c, info)
 	}
 
 	resp, err := adaptor.DoRequest(c, info, ioReader)
