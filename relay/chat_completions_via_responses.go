@@ -133,8 +133,10 @@ func chatCompletionsViaResponses(c *gin.Context, info *relaycommon.RelayInfo, ad
 		return nil, types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
 	}
 	defer closer.Close()
+	common.StoreLogAuditRequestBody(c, jsonData)
 	jsonData = nil
 	var requestBody io.Reader = body
+	service.StoreRelayLogAuditSource(c, info)
 
 	var httpResp *http.Response
 	resp, err := adaptor.DoRequest(c, info, requestBody)

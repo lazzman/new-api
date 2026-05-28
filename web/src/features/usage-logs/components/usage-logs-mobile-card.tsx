@@ -308,6 +308,16 @@ function MobileStreamTimingField({ log }: { log: UsageLog }) {
   )
 }
 
+function getCellOriginal<TData>(
+  cell: Cell<TData, unknown> | undefined
+): Record<string, unknown> {
+  const original = cell?.row.original
+  if (typeof original === 'object' && original !== null) {
+    return original as Record<string, unknown>
+  }
+  return {}
+}
+
 function CommonLogsCard<TData>({
   cells,
 }: {
@@ -318,6 +328,7 @@ function CommonLogsCard<TData>({
   const modelCell = cells.get('model_name')
   const quotaCell = cells.get('quota')
   const rowData = cells.get('created_at')?.row.original as UsageLog | undefined
+  const timeOriginal = getCellOriginal(cells.get('created_at'))
 
   return (
     <div className='space-y-2.5'>
@@ -332,8 +343,8 @@ function CommonLogsCard<TData>({
       <div className='grid grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)] gap-1.5'>
         <div className='bg-muted/20 min-w-0 rounded-md px-2 py-1.5'>
           <MobileLogTimeStatus
-            createdAt={rowData?.created_at}
-            type={rowData?.type}
+            createdAt={timeOriginal.created_at}
+            type={timeOriginal.type}
           />
         </div>
         <SummaryField

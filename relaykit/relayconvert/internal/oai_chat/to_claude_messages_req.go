@@ -1,8 +1,11 @@
 package oaichat
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"mime"
+	"path/filepath"
 	"strings"
 
 	"context"
@@ -346,6 +349,14 @@ func OpenAIChatRequestToClaudeMessages(c context.Context, info convmeta.Meta, te
 							Text: kitutil.GetPointer[string](mediaMessage.Text),
 						})
 					}
+				case dto.ContentTypeFile:
+					claudeFileMessage, err := openAIFileContentToClaudeMessage(mediaMessage)
+					if err != nil {
+						return nil, err
+					}
+					if claudeFileMessage != nil {
+						claudeMediaMessages = append(claudeMediaMessages, *claudeFileMessage)
+					}
 				default:
 					source := mediaMessage.ToFileSource()
 					if source == nil {
@@ -406,4 +417,80 @@ func OpenAIChatRequestToClaudeMessages(c context.Context, info convmeta.Meta, te
 		return nil, sharedclaude.ErrMissingMaxTokens
 	}
 	return &claudeRequest, nil
+}
+
+func openAIFileContentToClaudeMessage(mediaMessage dto.MediaContent) (*dto.ClaudeMediaMessage, error) {
+	file := mediaMessage.GetFile()
+	if file == nil || file.FileData == "" {
+		return nil, nil
+	}
+
+	mimeType := inferOpenAIMessageFileMimeType(file)
+	switch {
+	case strings.HasPrefix(mimeType, "text/"):
+		text, err := decodeBase64FileText(file.FileData)
+		if err != nil {
+			return nil, fmt.Errorf("decode text file failed: %s", err.Error())
+		}
+		return &dto.ClaudeMediaMessage{
+			Type: "text",
+			Text: common.GetPointer[string](text),
+		}, nil
+	case strings.HasPrefix(mimeType, "application/pdf"):
+		return &dto.ClaudeMediaMessage{
+			Type: "document",
+			Source: &dto.ClaudeMessageSource{
+				Type:      "base64",
+				MediaType: "application/pdf",
+				Data:      stripDataURLPrefix(file.FileData),
+			},
+		}, nil
+	}
+
+	return nil, nil
+}
+
+func inferOpenAIMessageFileMimeType(file *dto.MessageFile) string {
+	if file == nil {
+		return ""
+	}
+	if strings.HasPrefix(file.FileData, "data:") {
+		header, _, ok := strings.Cut(file.FileData, ",")
+		if ok {
+			mimeType := strings.TrimPrefix(header, "data:")
+			if idx := strings.Index(mimeType, ";"); idx >= 0 {
+				mimeType = mimeType[:idx]
+			}
+			if mimeType != "" {
+				return mimeType
+			}
+		}
+	}
+	if ext := strings.ToLower(filepath.Ext(file.FileName)); ext != "" {
+		if mimeType := mime.TypeByExtension(ext); mimeType != "" {
+			if idx := strings.Index(mimeType, ";"); idx >= 0 {
+				mimeType = strings.TrimSpace(mimeType[:idx])
+			}
+			return mimeType
+		}
+	}
+	return ""
+}
+
+func decodeBase64FileText(data string) (string, error) {
+	decoded, err := base64.StdEncoding.DecodeString(stripDataURLPrefix(data))
+	if err != nil {
+		return "", err
+	}
+	return string(decoded), nil
+}
+
+func stripDataURLPrefix(data string) string {
+	if strings.HasPrefix(data, "data:") {
+		_, payload, ok := strings.Cut(data, ",")
+		if ok {
+			return payload
+		}
+	}
+	return data
 }
