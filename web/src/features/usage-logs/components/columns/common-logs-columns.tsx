@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import type { ColumnDef } from '@tanstack/react-table'
-import { GitBranch, Sparkles, KeyRound } from 'lucide-react'
+import { FileSearch, GitBranch, KeyRound, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -57,6 +57,7 @@ import {
   isPerCallBilling,
 } from '../../lib/utils'
 import type { LogOtherData } from '../../types'
+import { AuditDialog } from '../dialogs/audit-dialog'
 import { DetailsDialog } from '../dialogs/details-dialog'
 import { ModelBadge } from '../model-badge'
 import { TimingMetricsCell, StreamTpsCell } from '../timing-metrics-cell'
@@ -772,6 +773,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
       header: t('Details'),
       cell: function DetailsCell({ row }) {
         const [dialogOpen, setDialogOpen] = useState(false)
+        const [auditOpen, setAuditOpen] = useState(false)
         const log = row.original
         const other = parseLogOther(log.other)
 
@@ -811,19 +813,48 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
 
         return (
           <>
-            <button
-              type='button'
-              className='group flex max-w-[200px] items-center gap-1 text-left text-xs'
-              onClick={() => setDialogOpen(true)}
-              title={t('Click to view full details')}
-            >
-              {detailPreview}
-            </button>
+            <div className='flex max-w-[220px] items-center gap-1.5'>
+              <button
+                type='button'
+                className='group flex min-w-0 items-center gap-1 text-left text-xs'
+                onClick={() => setDialogOpen(true)}
+                title={t('Click to view full details')}
+              >
+                {detailPreview}
+              </button>
+              {log.has_audit && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <button
+                          type='button'
+                          className='text-muted-foreground hover:text-foreground hover:bg-muted/80 inline-flex size-7 shrink-0 items-center justify-center rounded-md'
+                          onClick={() => setAuditOpen(true)}
+                          aria-label={t('View audit details')}
+                        />
+                      }
+                    >
+                      <FileSearch className='size-3.5' />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <span>{t('View audit details')}</span>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
             <DetailsDialog
               log={log}
               isAdmin={isAdmin}
               open={dialogOpen}
               onOpenChange={setDialogOpen}
+            />
+            <AuditDialog
+              log={log}
+              isAdmin={isAdmin}
+              open={auditOpen}
+              onOpenChange={setAuditOpen}
             />
           </>
         )

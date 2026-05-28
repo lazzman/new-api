@@ -25,6 +25,7 @@ func GeminiTextGenerationHandler(c *gin.Context, info *relaycommon.RelayInfo, re
 	if err != nil {
 		return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
 	}
+	common.StoreLogAuditResponse(c, resp.Header, "json", responseBody)
 
 	logger.LogDebug(c, "Gemini native response body: %s", responseBody)
 

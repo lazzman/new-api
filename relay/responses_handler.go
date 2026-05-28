@@ -86,6 +86,9 @@ func ResponsesHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *
 		if err != nil {
 			return types.NewError(err, types.ErrorCodeReadRequestBodyFailed, types.ErrOptionWithSkipRetry())
 		}
+		if auditBody, auditErr := storage.Bytes(); auditErr == nil {
+			common.StoreLogAuditRequestBody(c, auditBody)
+		}
 		requestBody = common.ReaderOnly(storage)
 	} else {
 		convertedRequest, err := adaptor.ConvertOpenAIResponsesRequest(c, info, *request)
@@ -113,6 +116,7 @@ func ResponsesHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *
 		}
 
 		logger.LogDebug(c, "requestBody: %s", jsonData)
+		common.StoreLogAuditRequestBody(c, jsonData)
 		body, size, closer, err := relaycommon.NewOutboundJSONBody(jsonData)
 		if err != nil {
 			return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
@@ -122,6 +126,7 @@ func ResponsesHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *
 		info.UpstreamRequestBodySize = size
 		requestBody = body
 	}
+	service.StoreRelayLogAuditSource(c, info)
 
 	var httpResp *http.Response
 	resp, err := adaptor.DoRequest(c, info, requestBody)

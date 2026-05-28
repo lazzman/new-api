@@ -4547,6 +4547,7 @@
     "This page has not been created yet.": "此頁面尚未建立。",
     "This plan does not allow balance redemption": "該套餐不允許使用餘額兌換",
     "This project must be used in compliance with the": "此項目的使用必須遵守",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "該記錄由舊版本執行個體寫入，缺少稽核資訊。請升級執行個體，以記錄伺服器 IP、回呼 IP、付款方式與系統版本。",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "此操作將從該渠道移除 {{count}} 個測試失敗的模型，且無法撤銷。",
     "This route discovers upstream OpenAI models and cannot be split or matched by client model rules.": "此路由用於探索上游 OpenAI 模型，無法拆分或使用用戶端模型規則配對。",
     "This session will lose access immediately and must sign in again.": "此工作階段將立即失去存取權限，且必須重新登入。",

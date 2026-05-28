@@ -179,8 +179,16 @@ func getModelListGroups(c *gin.Context) (modelListGroups, error) {
 	tokenGroup := common.GetContextKeyString(c, constant.ContextKeyTokenGroup)
 	userGroup := common.GetContextKeyString(c, constant.ContextKeyUserGroup)
 	if userGroup == "" && (tokenGroup == "" || tokenGroup == "auto") {
+		userId := c.GetInt("id")
+		if userId <= 0 {
+			return modelListGroups{
+				userGroup:   userGroup,
+				tokenGroup:  tokenGroup,
+				ownerGroups: nil,
+			}, nil
+		}
 		var err error
-		userGroup, err = model.GetUserGroup(c.GetInt("id"), false)
+		userGroup, err = model.GetUserGroup(userId, false)
 		if err != nil {
 			return modelListGroups{}, err
 		}

@@ -1,6 +1,7 @@
 package claude
 
 import (
+	"encoding/base64"
 	"strings"
 	"testing"
 
@@ -372,4 +373,68 @@ func TestOpenAIChatRequestToClaudeMessages_ClaudeOpus48ThinkingUsesAdaptiveHighE
 	require.Nil(t, claudeRequest.Temperature)
 	require.Nil(t, claudeRequest.TopP)
 	require.Nil(t, claudeRequest.TopK)
+}
+
+func TestOpenAIChatRequestToClaudeMessages_ConvertsInlineFiles(t *testing.T) {
+	tests := []struct {
+		name         string
+		file         *dto.MessageFile
+		expectedType string
+		expectedText string
+		expectedMime string
+		expectedData string
+	}{
+		{
+			name: "文本文件",
+			file: &dto.MessageFile{
+				FileName: "note.txt",
+				FileData: "data:text/plain;base64," + base64.StdEncoding.EncodeToString([]byte("hello Claude")),
+			},
+			expectedType: "text",
+			expectedText: "hello Claude",
+		},
+		{
+			name: "PDF 文件",
+			file: &dto.MessageFile{
+				FileName: "report.pdf",
+				FileData: "JVBERi0xLjQ=",
+			},
+			expectedType: "document",
+			expectedMime: "application/pdf",
+			expectedData: "JVBERi0xLjQ=",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request := dto.GeneralOpenAIRequest{
+				Model: "claude-test",
+				Messages: []dto.Message{{
+					Role: "user",
+					Content: []any{dto.MediaContent{
+						Type: dto.ContentTypeFile,
+						File: tt.file,
+					}},
+				}},
+			}
+
+			claudeRequest, err := relayconvert.OpenAIChatRequestToClaudeMessages(nil, request)
+			require.NoError(t, err)
+			require.Len(t, claudeRequest.Messages, 1)
+
+			content, ok := claudeRequest.Messages[0].Content.([]dto.ClaudeMediaMessage)
+			require.True(t, ok)
+			require.Len(t, content, 1)
+			assert.Equal(t, tt.expectedType, content[0].Type)
+			if tt.expectedText != "" {
+				require.NotNil(t, content[0].Text)
+				assert.Equal(t, tt.expectedText, *content[0].Text)
+			}
+			if tt.expectedMime != "" {
+				require.NotNil(t, content[0].Source)
+				assert.Equal(t, tt.expectedMime, content[0].Source.MediaType)
+				assert.Equal(t, tt.expectedData, content[0].Source.Data)
+			}
+		})
+	}
 }

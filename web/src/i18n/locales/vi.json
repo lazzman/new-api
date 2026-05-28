@@ -4547,6 +4547,7 @@
     "This page has not been created yet.": "Trang này chưa được tạo.",
     "This plan does not allow balance redemption": "Gói này không cho phép thanh toán bằng số dư",
     "This project must be used in compliance with the": "Dự án này phải được sử dụng tuân thủ theo",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "Bản ghi này do bản cũ tạo và thiếu thông tin audit. Nâng cấp bản cài để lưu IP máy chủ, IP callback, hình thức thanh toán và phiên bản hệ thống.",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "Thao tác này sẽ xóa {{count}} mô hình thất bại khỏi kênh này. Không thể hoàn tác.",
     "This route discovers upstream OpenAI models and cannot be split or matched by client model rules.": "Tuyến này khám phá các mô hình OpenAI thượng nguồn và không thể tách hoặc đối sánh bằng quy tắc mô hình phía máy khách.",
     "This session will lose access immediately and must sign in again.": "Phiên này sẽ mất quyền truy cập ngay lập tức và phải đăng nhập lại.",

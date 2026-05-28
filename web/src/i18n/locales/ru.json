@@ -4547,6 +4547,7 @@
     "This page has not been created yet.": "Эта страница еще не создана.",
     "This plan does not allow balance redemption": "Этот план не разрешает оплату балансом",
     "This project must be used in compliance with the": "Этот проект должен использоваться в соответствии с",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "Запись создана экземпляром до обновления и не содержит сведений аудита. Обновите экземпляр, чтобы фиксировать IP сервера, IP callback, способ оплаты и версию ОС.",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "Это удалит {{count}} неуспешных моделей из этого канала. Действие необратимо.",
     "This route discovers upstream OpenAI models and cannot be split or matched by client model rules.": "Этот маршрут обнаруживает модели OpenAI вышестоящего сервиса; его нельзя разделять или сопоставлять по правилам клиентских моделей.",
     "This session will lose access immediately and must sign in again.": "Этот сеанс немедленно потеряет доступ, и потребуется повторный вход.",

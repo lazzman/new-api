@@ -4547,6 +4547,7 @@
     "This page has not been created yet.": "This page has not been created yet.",
     "This plan does not allow balance redemption": "This plan does not allow balance redemption",
     "This project must be used in compliance with the": "This project must be used in compliance with the",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "This removes {{count}} failed models from this channel. This action cannot be undone.",
     "This route discovers upstream OpenAI models and cannot be split or matched by client model rules.": "This route discovers upstream OpenAI models and cannot be split or matched by client model rules.",
     "This session will lose access immediately and must sign in again.": "This session will lose access immediately and must sign in again.",
