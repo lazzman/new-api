@@ -5705,6 +5705,7 @@
     "This preview reads static plugin declarations. The gateway validates the plugin during installation.": "This preview reads static plugin declarations. The gateway validates the plugin during installation.",
     "This project must be used in compliance with the": "This project must be used in compliance with the",
     "This provider is unavailable for this model.": "This provider is unavailable for this model.",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "This removes {{count}} failed models from this channel. This action cannot be undone.",
     "This route discovers upstream OpenAI models and cannot be split or matched by client model rules.": "This route discovers upstream OpenAI models and cannot be split or matched by client model rules.",
     "This route is used only by channel management to discover upstream models.": "This route is used only by channel management to discover upstream models.",

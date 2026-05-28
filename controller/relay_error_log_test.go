@@ -32,7 +32,7 @@ func TestProcessChannelErrorUsesSnapshotWithoutLeakingChannelMetadata(t *testing
 	sqlDB, err := database.DB()
 	require.NoError(t, err)
 	sqlDB.SetMaxOpenConns(1)
-	require.NoError(t, database.AutoMigrate(&model.User{}, &model.Log{}))
+	require.NoError(t, database.AutoMigrate(&model.User{}, &model.Log{}, &model.LogAuditDetail{}))
 	model.DB, model.LOG_DB = database, database
 	common.RedisEnabled = false
 	common.SetDatabaseTypes(common.DatabaseTypeSQLite, common.DatabaseTypeSQLite)

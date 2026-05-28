@@ -2,6 +2,8 @@ package relay
 
 import (
 	"fmt"
+
+	"github.com/QuantumNous/new-api/common"
 	"net/http"
 	"strings"
 
@@ -69,6 +71,10 @@ func ResponsesHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *
 			service.ResetStatusCode(newAPIError, statusCodeMappingStr)
 			return newAPIError
 		}
+	}
+
+	if err := common.StoreLogAuditResponseAndResetBody(c, httpResp); err != nil {
+		return types.NewOpenAIError(fmt.Errorf("read audit response body: %w", err), types.ErrorCodeReadResponseBodyFailed, http.StatusInternalServerError)
 	}
 
 	usage, newAPIError := adaptor.DoResponse(c, httpResp, info)

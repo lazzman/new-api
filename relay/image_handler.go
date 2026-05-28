@@ -67,6 +67,7 @@ func ImageHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 			if err != nil {
 				return types.NewErrorWithStatusCode(err, types.ErrorCodeReadRequestBodyFailed, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
 			}
+			common.StoreLogAuditRequestBodyIfTextLike(c, jsonData)
 		}
 	} else {
 		convertedRequest, err := adaptor.ConvertImageRequest(c, info, *request)
@@ -122,6 +123,7 @@ func ImageHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 			}
 		}
 		logger.LogDebug(c, "image request body: %s", jsonData)
+		common.StoreLogAuditRequestBody(c, jsonData)
 		body, closer, err := relaycommon.NewOutboundJSONBody(jsonData)
 		if err != nil {
 			return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
@@ -132,6 +134,7 @@ func ImageHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 	if billingErr := service.PrepareImageBillingForRequest(c, info, imageCount, promptExtend); billingErr != nil {
 		return billingErr
 	}
+	service.StoreRelayLogAuditSource(c, info)
 
 	statusCodeMappingStr := c.GetString("status_code_mapping")
 
@@ -154,6 +157,10 @@ func ImageHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 				return newAPIError
 			}
 		}
+	}
+
+	if err := common.StoreLogAuditResponseAndResetBody(c, httpResp); err != nil {
+		return types.NewOpenAIError(fmt.Errorf("read audit response body: %w", err), types.ErrorCodeReadResponseBodyFailed, http.StatusInternalServerError)
 	}
 
 	usage, newAPIError := adaptor.DoResponse(c, httpResp, info)

@@ -5705,6 +5705,7 @@
     "This preview reads static plugin declarations. The gateway validates the plugin during installation.": "此預覽讀取外掛的靜態宣告，安裝時由閘道校驗外掛。",
     "This project must be used in compliance with the": "此項目的使用必須遵守",
     "This provider is unavailable for this model.": "此服務方目前無法提供此模型。",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "該記錄由舊版本執行個體寫入，缺少稽核資訊。請升級執行個體，以記錄伺服器 IP、回呼 IP、付款方式與系統版本。",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "此操作將從該渠道移除 {{count}} 個測試失敗的模型，且無法撤銷。",
     "This route discovers upstream OpenAI models and cannot be split or matched by client model rules.": "此路由用於探索上游 OpenAI 模型，無法拆分或使用用戶端模型規則配對。",
     "This route is used only by channel management to discover upstream models.": "此路由僅供渠道管理取得上游模型。",

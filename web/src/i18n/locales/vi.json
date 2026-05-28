@@ -5705,6 +5705,7 @@
     "This preview reads static plugin declarations. The gateway validates the plugin during installation.": "Bản xem trước đọc khai báo tĩnh của plugin. Cổng sẽ kiểm tra plugin khi cài đặt.",
     "This project must be used in compliance with the": "Dự án này phải được sử dụng tuân thủ theo",
     "This provider is unavailable for this model.": "Nhà cung cấp này hiện không hỗ trợ mô hình này.",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "Bản ghi này do bản cũ tạo và thiếu thông tin audit. Nâng cấp bản cài để lưu IP máy chủ, IP callback, hình thức thanh toán và phiên bản hệ thống.",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "Thao tác này sẽ xóa {{count}} mô hình thất bại khỏi kênh này. Không thể hoàn tác.",
     "This route discovers upstream OpenAI models and cannot be split or matched by client model rules.": "Tuyến này khám phá các mô hình OpenAI thượng nguồn và không thể tách hoặc đối sánh bằng quy tắc mô hình phía máy khách.",
     "This route is used only by channel management to discover upstream models.": "Route này chỉ được quản lý kênh dùng để lấy mô hình thượng nguồn.",
