@@ -27,6 +27,7 @@ import type {
   GetLogsResponse,
   GetLogStatsParams,
   GetLogStatsResponse,
+  LogAuditDetail,
   GetMidjourneyLogsParams,
   GetTaskLogsParams,
   TaskArtifactsResponse,
@@ -140,6 +141,15 @@ export async function exportLogs(
     throw createServerError(result)
   }
   return result.data?.count ?? 0
+}
+
+export async function getLogAuditDetail(
+  logId: number,
+  isAdmin: boolean
+): Promise<{ success: boolean; message?: string; data?: LogAuditDetail }> {
+  const path = isAdmin ? `/api/log/${logId}/audit` : `/api/log/self/${logId}/audit`
+  const res = await api.get(path)
+  return res.data
 }
 
 export async function getUserInfo(

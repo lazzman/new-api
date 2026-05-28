@@ -6817,6 +6817,7 @@
     "This plugin is disabled or not installed, so the instance does not run. It keeps its settings.": "このプラグインは停止中か未インストールのため、インスタンスは実行されません。設定は保持されます。",
     "This project must be used in compliance with the": "このプロジェクトは、以下を遵守して使用する必要があります",
     "This provider is unavailable for this model.": "このプロバイダーでは現在このモデルを利用できません。",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "古いバージョンのインスタンスがこの記録を書き込み、監査情報がありません。最新に更新し、サーバーIP・コールバックIP・支払方法・OSバージョンの記録を有効にしてください。",
     "This release was withdrawn.": "このバージョンは公開が取り消されました。",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "この操作はこのチャンネルから失敗した {{count}} 個のモデルを削除します。元に戻せません。",
     "This reply would be stopped": "この回答は停止されます",

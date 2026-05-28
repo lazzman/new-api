@@ -6817,6 +6817,7 @@
     "This plugin is disabled or not installed, so the instance does not run. It keeps its settings.": "This plugin is disabled or not installed, so the instance does not run. It keeps its settings.",
     "This project must be used in compliance with the": "This project must be used in compliance with the",
     "This provider is unavailable for this model.": "This provider is unavailable for this model.",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.",
     "This release was withdrawn.": "This release was withdrawn.",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "This removes {{count}} failed models from this channel. This action cannot be undone.",
     "This reply would be stopped": "This reply would be stopped",

@@ -6817,6 +6817,7 @@
     "This plugin is disabled or not installed, so the instance does not run. It keeps its settings.": "Ce plugin est désactivé ou n'est pas installé : l'instance ne s'exécute pas, mais conserve ses paramètres.",
     "This project must be used in compliance with the": "Ce projet doit être utilisé conformément aux",
     "This provider is unavailable for this model.": "Ce fournisseur est indisponible pour ce modèle.",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "Cet enregistrement provient d’une instance avant la mise à niveau et n’inclut pas d’audits. Mettez à jour l’instance pour enregistrer l’IP du serveur, l’IP de callback, le moyen de paiement et la version du système.",
     "This release was withdrawn.": "Cette version a été retirée.",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "Cela supprime {{count}} modèles en échec de ce canal. Cette action est irréversible.",
     "This reply would be stopped": "Cette réponse serait interrompue",

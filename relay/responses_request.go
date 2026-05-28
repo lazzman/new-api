@@ -14,6 +14,7 @@ import (
 	"github.com/QuantumNous/new-api/relay/requestplugin"
 	"github.com/QuantumNous/new-api/relaykit/dto"
 	"github.com/QuantumNous/new-api/relaykit/types"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/gin-gonic/gin"
 )
@@ -58,7 +59,11 @@ func PrepareResponsesRequest(c *gin.Context, info *relaycommon.RelayInfo, req *d
 		if apiErr := requestplugin.PassThrough(c, info, storage); apiErr != nil {
 			return nil, nil, nil, apiErr
 		}
+		if auditBody, auditErr := storage.Bytes(); auditErr == nil {
+			common.StoreLogAuditRequestBodyIfTextLike(c, auditBody)
+		}
 		body := common.NewReplayableBodyReader(storage)
+		service.StoreRelayLogAuditSource(c, info)
 		return adaptor, body, io.NopCloser(body), nil
 	}
 
@@ -97,9 +102,11 @@ func PrepareResponsesRequest(c *gin.Context, info *relaycommon.RelayInfo, req *d
 	}
 
 	logger.LogDebug(c, "requestBody: %s", jsonData)
+	common.StoreLogAuditRequestBody(c, jsonData)
 	body, closer, err := relaycommon.NewOutboundJSONBody(jsonData)
 	if err != nil {
 		return nil, nil, nil, types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
 	}
+	service.StoreRelayLogAuditSource(c, info)
 	return adaptor, body, closer, nil
 }

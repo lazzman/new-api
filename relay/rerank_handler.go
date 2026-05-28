@@ -51,7 +51,11 @@ func RerankHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		if newAPIError = requestplugin.PassThrough(c, info, storage); newAPIError != nil {
 			return newAPIError
 		}
+		if auditBody, auditErr := storage.Bytes(); auditErr == nil {
+			common.StoreLogAuditRequestBodyIfTextLike(c, auditBody)
+		}
 		requestBody = common.NewReplayableBodyReader(storage)
+
 	} else {
 		convertedRequest, err := adaptor.ConvertRerankRequest(c, info.RelayMode, *request)
 		if err != nil {
@@ -78,7 +82,9 @@ func RerankHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		}
 
 		logger.LogDebug(c, "Rerank request body: %s", jsonData)
+		common.StoreLogAuditRequestBody(c, jsonData)
 		body, closer, err := relaycommon.NewOutboundJSONBody(jsonData)
+
 		if err != nil {
 			return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
 		}
@@ -86,6 +92,7 @@ func RerankHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		jsonData = nil
 		requestBody = body
 	}
+	service.StoreRelayLogAuditSource(c, info)
 
 	resp, err := adaptor.DoRequest(c, info, requestBody)
 	if err != nil {
@@ -102,6 +109,10 @@ func RerankHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 			service.ResetStatusCode(newAPIError, statusCodeMappingStr)
 			return newAPIError
 		}
+	}
+
+	if err := common.StoreLogAuditResponseAndResetBody(c, httpResp); err != nil {
+		return types.NewOpenAIError(fmt.Errorf("read audit response body: %w", err), types.ErrorCodeReadResponseBodyFailed, http.StatusInternalServerError)
 	}
 
 	usage, newAPIError := adaptor.DoResponse(c, httpResp, info)
