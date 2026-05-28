@@ -94,7 +94,11 @@ func GeminiHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		if err != nil {
 			return types.NewErrorWithStatusCode(err, types.ErrorCodeReadRequestBodyFailed, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
 		}
+		if auditBody, auditErr := storage.Bytes(); auditErr == nil {
+			common.StoreLogAuditRequestBody(c, auditBody)
+		}
 		requestBody = common.NewReplayableBodyReader(storage)
+
 	} else {
 		// 使用 ConvertGeminiRequest 转换请求格式
 		convertedRequest, err := adaptor.ConvertGeminiRequest(c, info, request)
@@ -116,6 +120,7 @@ func GeminiHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		}
 
 		logger.LogDebug(c, "Gemini request body: %s", jsonData)
+		common.StoreLogAuditRequestBody(c, jsonData)
 
 		body, closer, err := relaycommon.NewOutboundJSONBody(jsonData)
 		if err != nil {
@@ -125,6 +130,7 @@ func GeminiHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 		jsonData = nil
 		requestBody = body
 	}
+	service.StoreRelayLogAuditSource(c, info)
 
 	resp, err := adaptor.DoRequest(c, info, requestBody)
 	if err != nil {
@@ -224,13 +230,16 @@ func GeminiEmbeddingHandler(c *gin.Context, info *relaycommon.RelayInfo) (newAPI
 		}
 	}
 	logger.LogDebug(c, "Gemini embedding request body: %s", jsonData)
+	common.StoreLogAuditRequestBody(c, jsonData)
 	body, closer, err := relaycommon.NewOutboundJSONBody(jsonData)
+
 	if err != nil {
 		return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
 	}
 	defer closer.Close()
 	jsonData = nil
 	requestBody = body
+	service.StoreRelayLogAuditSource(c, info)
 
 	resp, err := adaptor.DoRequest(c, info, requestBody)
 	if err != nil {
@@ -247,6 +256,10 @@ func GeminiEmbeddingHandler(c *gin.Context, info *relaycommon.RelayInfo) (newAPI
 			service.ResetStatusCode(newAPIError, statusCodeMappingStr)
 			return newAPIError
 		}
+	}
+
+	if err := common.StoreLogAuditResponseAndResetBody(c, httpResp); err != nil {
+		return types.NewOpenAIError(fmt.Errorf("read audit response body: %w", err), types.ErrorCodeReadResponseBodyFailed, http.StatusInternalServerError)
 	}
 
 	usage, openaiErr := adaptor.DoResponse(c, resp.(*http.Response), info)

@@ -145,12 +145,20 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 		wg          sync.WaitGroup // 用于等待所有 goroutine 退出
 		cleanupOnce sync.Once
 		stopOnce    sync.Once
+		auditSSE    strings.Builder
+		auditBytes  int
 	)
 
 	stop := func() {
 		stopOnce.Do(func() {
 			close(stopChan)
 		})
+	}
+
+	appendAuditSSE := func(data string) {
+		chunk := "data: " + data + "\n\n"
+		auditBytes += len(chunk)
+		auditSSE.WriteString(chunk)
 	}
 
 	generalSettings := operation_setting.GetGeneralSetting()
@@ -298,14 +306,18 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 			data := scanner.Text()
 			logger.LogDebug(c, "stream scanner data: %s", data)
 
-			data, hasDataPrefix := strings.CutPrefix(data, "data:")
-			data = strings.TrimSpace(data)
-			if !hasDataPrefix && data != "[DONE]" {
+			if len(data) < 6 {
 				continue
 			}
+			if data[:5] != "data:" && data[:6] != "[DONE]" {
+				continue
+			}
+			data = data[5:]
+			data = strings.TrimSpace(data)
 			if data == "" {
 				continue
 			}
+			appendAuditSSE(data)
 			if data != "[DONE]" {
 				info.SetFirstResponseTime()
 				info.ReceivedResponseCount++
@@ -348,6 +360,9 @@ func StreamScannerHandler(c *gin.Context, resp *http.Response, info *relaycommon
 		// 客户端断开：立即 cleanup 关闭上游 resp.Body，解除 scanner 阻塞并让上游停止生成，
 		// 避免为已放弃的请求继续消费上游 token。
 		info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonClientGone, c.Request.Context().Err())
+	}
+	if auditBytes > 0 {
+		common.StoreLogAuditResponseParts(c, resp.Header, "stream", auditSSE.String(), auditBytes, false)
 	}
 
 	cleanup()
