@@ -63,6 +63,7 @@ func OpenaiTTSHandler(c *gin.Context, resp *http.Response, info *relaycommon.Rel
 			c.Writer.WriteHeaderNow()
 			return usage
 		}
+		common.StoreLogAuditResponseParts(c, resp.Header, "binary", "", len(bodyBytes), false)
 
 		// 写入响应到客户端
 		c.Writer.WriteHeaderNow()
