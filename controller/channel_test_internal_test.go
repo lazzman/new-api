@@ -128,3 +128,62 @@ func TestTestAllChannelsRejectsExistingActiveTask(t *testing.T) {
 	require.Contains(t, recorder.Body.String(), existing.TaskID)
 	require.Contains(t, recorder.Body.String(), "已有通道测试任务正在运行或等待中")
 }
+
+func TestChannelTestAuditSupportsRelayFormatsWithFriendlyFrontendViews(t *testing.T) {
+	for _, relayFormat := range []types.RelayFormat{
+		types.RelayFormatRerank,
+		types.RelayFormatEmbedding,
+		types.RelayFormatOpenAIImage,
+	} {
+		require.True(t, isChannelTestAuditSupported(relayFormat), relayFormat)
+	}
+}
+
+func TestStoreChannelTestAuditResponseFallback(t *testing.T) {
+	tests := []struct {
+		name        string
+		relayFormat types.RelayFormat
+		body        []byte
+	}{
+		{
+			name:        "rerank",
+			relayFormat: types.RelayFormatRerank,
+			body:        []byte(`{"results":[{"index":0,"relevance_score":0.9}],"usage":{"total_tokens":3}}`),
+		},
+		{
+			name:        "embedding",
+			relayFormat: types.RelayFormatEmbedding,
+			body:        []byte(`{"data":[{"embedding":[0.1,0.2],"index":0}],"usage":{"total_tokens":3}}`),
+		},
+		{
+			name:        "image",
+			relayFormat: types.RelayFormatOpenAIImage,
+			body:        []byte(`{"data":[{"url":"https://example.com/image.png"}]}`),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gin.SetMode(gin.TestMode)
+			ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+			common.StoreLogAuditRequestBody(ctx, []byte(`{"model":"test"}`))
+
+			headers := http.Header{}
+			headers.Set("Content-Type", "application/json")
+
+			storeChannelTestAuditResponseFallbackIfNeeded(ctx, tt.relayFormat, headers, false, tt.body)
+
+			payload, ok, err := common.BuildLogAuditPayload(ctx)
+			require.NoError(t, err)
+			require.True(t, ok)
+
+			var parsed common.LogAuditPayload
+			require.NoError(t, common.Unmarshal([]byte(payload), &parsed))
+			require.Equal(t, "json", parsed.Response.Type)
+			require.Equal(t, string(tt.body), parsed.Response.Raw)
+			require.Equal(t, len(tt.body), parsed.Response.Bytes)
+			require.False(t, parsed.Response.Truncated)
+			require.Equal(t, "application/json", parsed.Response.Headers["Content-Type"][0])
+		})
+	}
+}

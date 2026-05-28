@@ -58,6 +58,7 @@ func EmbeddingHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *
 	}
 
 	logger.LogDebug(c, "converted embedding request body: %s", jsonData)
+	common.StoreLogAuditRequestBody(c, jsonData)
 	body, size, closer, err := relaycommon.NewOutboundJSONBody(jsonData)
 	if err != nil {
 		return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
@@ -66,6 +67,7 @@ func EmbeddingHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *
 	jsonData = nil
 	info.UpstreamRequestBodySize = size
 	var requestBody io.Reader = body
+	service.StoreRelayLogAuditSource(c, info)
 	statusCodeMappingStr := c.GetString("status_code_mapping")
 	resp, err := adaptor.DoRequest(c, info, requestBody)
 	if err != nil {
@@ -81,6 +83,10 @@ func EmbeddingHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *
 			service.ResetStatusCode(newAPIError, statusCodeMappingStr)
 			return newAPIError
 		}
+	}
+
+	if err := common.StoreLogAuditResponseAndResetBody(c, httpResp); err != nil {
+		return types.NewOpenAIError(fmt.Errorf("read audit response body: %w", err), types.ErrorCodeReadResponseBodyFailed, http.StatusInternalServerError)
 	}
 
 	usage, newAPIError := adaptor.DoResponse(c, httpResp, info)

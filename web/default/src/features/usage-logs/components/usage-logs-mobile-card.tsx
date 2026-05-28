@@ -175,6 +175,16 @@ function MobileLogTimeStatus({
   )
 }
 
+function getCellOriginal<TData>(
+  cell: Cell<TData, unknown> | undefined
+): Record<string, unknown> {
+  const original = cell?.row.original
+  if (typeof original === 'object' && original !== null) {
+    return original as Record<string, unknown>
+  }
+  return {}
+}
+
 function CommonLogsCard<TData>({
   cells,
 }: {
@@ -184,9 +194,7 @@ function CommonLogsCard<TData>({
 
   const modelCell = cells.get('model_name')
   const quotaCell = cells.get('quota')
-  const rowData = cells.get('created_at')?.row.original as
-    | Record<string, unknown>
-    | undefined
+  const timeOriginal = getCellOriginal(cells.get('created_at'))
 
   return (
     <div className='space-y-2.5'>
@@ -204,8 +212,8 @@ function CommonLogsCard<TData>({
             {t('Time')}
           </div>
           <MobileLogTimeStatus
-            createdAt={rowData?.created_at}
-            type={rowData?.type}
+            createdAt={timeOriginal.created_at}
+            type={timeOriginal.type}
           />
         </div>
         <SummaryField
