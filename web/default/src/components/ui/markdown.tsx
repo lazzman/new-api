@@ -51,7 +51,6 @@ export function Markdown({ children, className }: MarkdownProps) {
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeRaw]}
         components={{
-          // 自定义组件渲染（可选）
           a: ({ node, ...props }) => (
             <a {...props} target='_blank' rel='noopener noreferrer' />
           ),

@@ -430,6 +430,12 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 		}
 	}
 
+	auditSupported := isChannelTestAuditSupported(relayFormat)
+	if auditSupported {
+		common.StoreLogAuditRequestBody(c, jsonData)
+		service.StoreRelayLogAuditSource(c, info)
+	}
+
 	requestBody := bytes.NewBuffer(jsonData)
 	c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonData))
 	resp, err := adaptor.DoRequest(c, info, requestBody)
@@ -501,7 +507,7 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 	milliseconds := tok.Sub(tik).Milliseconds()
 	consumedTime := float64(milliseconds) / 1000.0
 	other := buildTestLogOther(c, info, priceData, usage, tieredResult)
-	model.RecordConsumeLog(c, testUserID, model.RecordConsumeLogParams{
+	logId, logErr := model.RecordConsumeLog(c, testUserID, model.RecordConsumeLogParams{
 		ChannelId:        channel.Id,
 		PromptTokens:     usage.PromptTokens,
 		CompletionTokens: usage.CompletionTokens,
@@ -514,11 +520,27 @@ func testChannel(channel *model.Channel, testUserID int, testModel string, endpo
 		Group:            info.UsingGroup,
 		Other:            other,
 	})
+	if logErr == nil && auditSupported {
+		service.RecordLogAuditDetail(c, info, logId)
+	}
 	common.SysLog(fmt.Sprintf("testing channel #%d, response: \n%s", channel.Id, string(respBody)))
 	return testResult{
 		context:     c,
 		localErr:    nil,
 		newAPIError: nil,
+	}
+}
+
+func isChannelTestAuditSupported(relayFormat types.RelayFormat) bool {
+	switch relayFormat {
+	case types.RelayFormatOpenAI,
+		types.RelayFormatOpenAIResponses,
+		types.RelayFormatOpenAIResponsesCompaction,
+		types.RelayFormatClaude,
+		types.RelayFormatGemini:
+		return true
+	default:
+		return false
 	}
 }
 

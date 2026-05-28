@@ -55,6 +55,34 @@ func GetUserLogs(c *gin.Context) {
 	return
 }
 
+func GetLogAuditDetail(c *gin.Context) {
+	logId, err := strconv.Atoi(c.Param("id"))
+	if err != nil || logId <= 0 {
+		common.ApiErrorMsg(c, "无效的日志 ID")
+		return
+	}
+	detail, err := model.GetLogAuditDetail(logId)
+	if err != nil {
+		common.ApiErrorMsg(c, "审计详情不存在")
+		return
+	}
+	common.ApiSuccess(c, detail)
+}
+
+func GetSelfLogAuditDetail(c *gin.Context) {
+	logId, err := strconv.Atoi(c.Param("id"))
+	if err != nil || logId <= 0 {
+		common.ApiErrorMsg(c, "无效的日志 ID")
+		return
+	}
+	detail, err := model.GetUserLogAuditDetail(c.GetInt("id"), logId)
+	if err != nil {
+		common.ApiErrorMsg(c, "审计详情不存在")
+		return
+	}
+	common.ApiSuccess(c, detail)
+}
+
 // Deprecated: SearchAllLogs 已废弃，前端未使用该接口。
 func SearchAllLogs(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{

@@ -191,6 +191,47 @@ export interface LogOtherData {
   subscription_total?: number
 }
 
+export interface LogAuditDetail {
+  id: number
+  log_id: number
+  user_id: number
+  created_at: number
+  request_id?: string
+  payload: string
+}
+
+export interface LogAuditSource {
+  protocol?: string
+  request_format?: string
+  relay_format?: string
+  channel_id?: number
+  channel_type?: number
+  api_type?: number
+  endpoint?: string
+  upstream_url?: string
+  original_model?: string
+  upstream_model?: string
+  stream?: boolean
+}
+
+export interface LogAuditMessage {
+  headers?: Record<string, string[]>
+  raw?: string
+  bytes?: number
+  truncated?: boolean
+}
+
+export interface LogAuditResponse extends LogAuditMessage {
+  type?: string
+}
+
+export interface LogAuditPayload {
+  version: number
+  source?: LogAuditSource
+  request?: LogAuditMessage
+  response?: LogAuditResponse
+}
+
 /**
  * Log statistics data
  */

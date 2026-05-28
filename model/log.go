@@ -15,6 +15,7 @@ import (
 
 	"github.com/bytedance/gopkg/util/gopool"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 func applyExplicitLogTextFilter(tx *gorm.DB, column string, value string) (*gorm.DB, error) {
@@ -33,6 +34,7 @@ func applyExplicitLogTextFilter(tx *gorm.DB, column string, value string) (*gorm
 
 type Log struct {
 	Id                int    `json:"id" gorm:"index:idx_created_at_id,priority:2;index:idx_user_id_id,priority:2"`
+	LogId             int    `json:"log_id,omitempty" gorm:"-"`
 	UserId            int    `json:"user_id" gorm:"index;index:idx_user_id_id,priority:1"`
 	CreatedAt         int64  `json:"created_at" gorm:"bigint;index:idx_created_at_id,priority:1;index:idx_created_at_type"`
 	Type              int    `json:"type" gorm:"index:idx_created_at_type"`
@@ -53,6 +55,29 @@ type Log struct {
 	RequestId         string `json:"request_id,omitempty" gorm:"type:varchar(64);index:idx_logs_request_id;default:''"`
 	UpstreamRequestId string `json:"upstream_request_id,omitempty" gorm:"type:varchar(128);index:idx_logs_upstream_request_id;default:''"`
 	Other             string `json:"other"`
+	HasAudit          bool   `json:"has_audit" gorm:"-"`
+}
+
+type LogAuditDetail struct {
+	Id        int                 `json:"id"`
+	LogId     int                 `json:"log_id" gorm:"column:log_id;unique"`
+	UserId    int                 `json:"user_id" gorm:"index"`
+	CreatedAt int64               `json:"created_at" gorm:"bigint;index"`
+	RequestId string              `json:"request_id,omitempty" gorm:"type:varchar(64);index;default:''"`
+	Payload   LogAuditPayloadText `json:"payload" gorm:"column:payload"`
+}
+
+type LogAuditPayloadText string
+
+func (LogAuditPayloadText) GormDataType() string {
+	return "text"
+}
+
+func (LogAuditPayloadText) GormDBDataType(db *gorm.DB, _ *schema.Field) string {
+	if db != nil && db.Dialector != nil && db.Dialector.Name() == "mysql" {
+		return "LONGTEXT"
+	}
+	return "TEXT"
 }
 
 // don't use iota, avoid change log type value
@@ -68,6 +93,9 @@ const (
 
 func formatUserLogs(logs []*Log, startIdx int) {
 	for i := range logs {
+		if logs[i].LogId == 0 {
+			logs[i].LogId = logs[i].Id
+		}
 		logs[i].ChannelName = ""
 		var otherMap map[string]interface{}
 		otherMap, _ = common.StrToMap(logs[i].Other)
@@ -219,9 +247,9 @@ type RecordConsumeLogParams struct {
 	Other            map[string]interface{} `json:"other"`
 }
 
-func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams) {
+func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams) (int, error) {
 	if !common.LogConsumeEnabled {
-		return
+		return 0, nil
 	}
 	logger.LogInfo(c, fmt.Sprintf("record consume log: userId=%d, params=%s", userId, common.GetJsonString(params)))
 	username := c.GetString("username")
@@ -264,12 +292,74 @@ func RecordConsumeLog(c *gin.Context, userId int, params RecordConsumeLogParams)
 	err := LOG_DB.Create(log).Error
 	if err != nil {
 		logger.LogError(c, "failed to record log: "+err.Error())
+		return 0, err
 	}
 	if common.DataExportEnabled {
 		gopool.Go(func() {
 			LogQuotaData(userId, username, params.ModelName, params.Quota, common.GetTimestamp(), params.PromptTokens+params.CompletionTokens)
 		})
 	}
+	return log.Id, nil
+}
+
+func RecordLogAuditDetail(detail *LogAuditDetail) error {
+	if detail == nil || detail.LogId == 0 || detail.Payload == "" {
+		return nil
+	}
+	if detail.CreatedAt == 0 {
+		detail.CreatedAt = common.GetTimestamp()
+	}
+	return LOG_DB.Create(detail).Error
+}
+
+func GetLogAuditDetail(logId int) (*LogAuditDetail, error) {
+	var detail LogAuditDetail
+	err := LOG_DB.Where("log_id = ?", logId).First(&detail).Error
+	if err != nil {
+		return nil, err
+	}
+	return &detail, nil
+}
+
+func GetUserLogAuditDetail(userId int, logId int) (*LogAuditDetail, error) {
+	var detail LogAuditDetail
+	err := LOG_DB.Where("log_id = ? AND user_id = ?", logId, userId).First(&detail).Error
+	if err != nil {
+		return nil, err
+	}
+	return &detail, nil
+}
+
+func attachLogAuditAvailability(logs []*Log) error {
+	if len(logs) == 0 {
+		return nil
+	}
+	ids := make([]int, 0, len(logs))
+	for _, log := range logs {
+		if log == nil {
+			continue
+		}
+		log.LogId = log.Id
+		ids = append(ids, log.Id)
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	var auditLogIds []int
+	if err := LOG_DB.Model(&LogAuditDetail{}).Where("log_id IN ?", ids).Pluck("log_id", &auditLogIds).Error; err != nil {
+		return err
+	}
+	auditSet := make(map[int]struct{}, len(auditLogIds))
+	for _, id := range auditLogIds {
+		auditSet[id] = struct{}{}
+	}
+	for _, log := range logs {
+		if log == nil {
+			continue
+		}
+		_, log.HasAudit = auditSet[log.LogId]
+	}
+	return nil
 }
 
 type RecordTaskBillingLogParams struct {
@@ -358,6 +448,9 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 	if err != nil {
 		return nil, 0, err
 	}
+	if err = attachLogAuditAvailability(logs); err != nil {
+		return logs, total, err
+	}
 
 	channelIds := types.NewSet[int]()
 	for _, log := range logs {
@@ -441,6 +534,10 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 	err = tx.Order("logs.id desc").Limit(num).Offset(startIdx).Find(&logs).Error
 	if err != nil {
 		common.SysError("failed to search user logs: " + err.Error())
+		return nil, 0, errors.New("查询日志失败")
+	}
+	if err = attachLogAuditAvailability(logs); err != nil {
+		common.SysError("failed to attach user log audit availability: " + err.Error())
 		return nil, 0, errors.New("查询日志失败")
 	}
 
@@ -539,14 +636,26 @@ func DeleteOldLog(ctx context.Context, targetTimestamp int64, limit int) (int64,
 			return total, ctx.Err()
 		}
 
-		result := LOG_DB.Where("created_at < ?", targetTimestamp).Limit(limit).Delete(&Log{})
-		if nil != result.Error {
+		var ids []int
+		if err := LOG_DB.Model(&Log{}).Where("created_at < ?", targetTimestamp).Order("id").Limit(limit).Pluck("id", &ids).Error; err != nil {
+			return total, err
+		}
+		if len(ids) == 0 {
+			break
+		}
+
+		if err := LOG_DB.Where("log_id IN ?", ids).Delete(&LogAuditDetail{}).Error; err != nil {
+			return total, err
+		}
+
+		result := LOG_DB.Where("id IN ?", ids).Delete(&Log{})
+		if result.Error != nil {
 			return total, result.Error
 		}
 
 		total += result.RowsAffected
 
-		if result.RowsAffected < int64(limit) {
+		if len(ids) < limit {
 			break
 		}
 	}
