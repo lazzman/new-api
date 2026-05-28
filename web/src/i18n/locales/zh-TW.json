@@ -6788,6 +6788,7 @@
     "This plugin is disabled or not installed, so the instance does not run. It keeps its settings.": "此外掛已停用或未安裝，實例不會執行，設定會保留。",
     "This project must be used in compliance with the": "此項目的使用必須遵守",
     "This provider is unavailable for this model.": "此服務方目前無法提供此模型。",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "該記錄由舊版本執行個體寫入，缺少稽核資訊。請升級執行個體，以記錄伺服器 IP、回呼 IP、付款方式與系統版本。",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "此操作將從該渠道移除 {{count}} 個測試失敗的模型，且無法撤銷。",
     "This reply would be stopped": "這則回覆會被中止",
     "This request reached its checking limit": "本次請求的檢查量已達上限",

@@ -6788,6 +6788,7 @@
     "This plugin is disabled or not installed, so the instance does not run. It keeps its settings.": "Plugin này đã tắt hoặc chưa được cài, nên phiên bản không chạy. Cài đặt vẫn được giữ.",
     "This project must be used in compliance with the": "Dự án này phải được sử dụng tuân thủ theo",
     "This provider is unavailable for this model.": "Nhà cung cấp này hiện không hỗ trợ mô hình này.",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "Bản ghi này do bản cũ tạo và thiếu thông tin audit. Nâng cấp bản cài để lưu IP máy chủ, IP callback, hình thức thanh toán và phiên bản hệ thống.",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "Thao tác này sẽ xóa {{count}} mô hình thất bại khỏi kênh này. Không thể hoàn tác.",
     "This reply would be stopped": "Câu trả lời này sẽ bị dừng",
     "This request reached its checking limit": "Yêu cầu này đã đạt giới hạn kiểm tra",

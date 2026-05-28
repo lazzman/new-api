@@ -6788,6 +6788,7 @@
     "This plugin is disabled or not installed, so the instance does not run. It keeps its settings.": "Этот плагин отключён или не установлен, поэтому экземпляр не запускается. Его настройки сохраняются.",
     "This project must be used in compliance with the": "Этот проект должен использоваться в соответствии с",
     "This provider is unavailable for this model.": "Этот провайдер сейчас недоступен для данной модели.",
+    "This record was written by a pre-upgrade instance and lacks audit info. Upgrade the instance to record server IP, callback IP, payment method and system version.": "Запись создана экземпляром до обновления и не содержит сведений аудита. Обновите экземпляр, чтобы фиксировать IP сервера, IP callback, способ оплаты и версию ОС.",
     "This removes {{count}} failed models from this channel. This action cannot be undone.": "Это удалит {{count}} неуспешных моделей из этого канала. Действие необратимо.",
     "This reply would be stopped": "Этот ответ будет остановлен",
     "This request reached its checking limit": "Достигнут предел проверки для этого запроса",
