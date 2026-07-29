@@ -434,7 +434,7 @@ func openAIFileContentToClaudeMessage(mediaMessage dto.MediaContent) (*dto.Claud
 		}
 		return &dto.ClaudeMediaMessage{
 			Type: "text",
-			Text: common.GetPointer[string](text),
+			Text: kitutil.GetPointer[string](text),
 		}, nil
 	case strings.HasPrefix(mimeType, "application/pdf"):
 		return &dto.ClaudeMediaMessage{

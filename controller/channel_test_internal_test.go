@@ -13,6 +13,7 @@ import (
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relaykit/dto"
+	relaytypes "github.com/QuantumNous/new-api/relaykit/types"
 	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/QuantumNous/new-api/types"
@@ -331,10 +332,10 @@ func TestTestAllChannelsRejectsExistingActiveTask(t *testing.T) {
 }
 
 func TestChannelTestAuditSupportsRelayFormatsWithFriendlyFrontendViews(t *testing.T) {
-	for _, relayFormat := range []types.RelayFormat{
-		types.RelayFormatRerank,
-		types.RelayFormatEmbedding,
-		types.RelayFormatOpenAIImage,
+	for _, relayFormat := range []relaytypes.RelayFormat{
+		relaytypes.RelayFormatRerank,
+		relaytypes.RelayFormatEmbedding,
+		relaytypes.RelayFormatOpenAIImage,
 	} {
 		require.True(t, isChannelTestAuditSupported(relayFormat), relayFormat)
 	}
@@ -343,22 +344,22 @@ func TestChannelTestAuditSupportsRelayFormatsWithFriendlyFrontendViews(t *testin
 func TestStoreChannelTestAuditResponseFallback(t *testing.T) {
 	tests := []struct {
 		name        string
-		relayFormat types.RelayFormat
+		relayFormat relaytypes.RelayFormat
 		body        []byte
 	}{
 		{
 			name:        "rerank",
-			relayFormat: types.RelayFormatRerank,
+			relayFormat: relaytypes.RelayFormatRerank,
 			body:        []byte(`{"results":[{"index":0,"relevance_score":0.9}],"usage":{"total_tokens":3}}`),
 		},
 		{
 			name:        "embedding",
-			relayFormat: types.RelayFormatEmbedding,
+			relayFormat: relaytypes.RelayFormatEmbedding,
 			body:        []byte(`{"data":[{"embedding":[0.1,0.2],"index":0}],"usage":{"total_tokens":3}}`),
 		},
 		{
 			name:        "image",
-			relayFormat: types.RelayFormatOpenAIImage,
+			relayFormat: relaytypes.RelayFormatOpenAIImage,
 			body:        []byte(`{"data":[{"url":"https://example.com/image.png"}]}`),
 		},
 	}

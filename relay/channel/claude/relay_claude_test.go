@@ -419,7 +419,7 @@ func TestOpenAIChatRequestToClaudeMessages_ConvertsInlineFiles(t *testing.T) {
 				}},
 			}
 
-			claudeRequest, err := relayconvert.OpenAIChatRequestToClaudeMessages(nil, request)
+			claudeRequest, err := relayconvert.OpenAIChatRequestToClaudeMessages(nil, &relaycommon.RelayInfo{}, request)
 			require.NoError(t, err)
 			require.Len(t, claudeRequest.Messages, 1)
 
