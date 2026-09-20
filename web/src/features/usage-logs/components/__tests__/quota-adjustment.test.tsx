@@ -158,6 +158,7 @@ describe('quota adjustment log localization', () => {
       })
       const log: UsageLog = {
         id: 1,
+        log_id: 1,
         user_id: 1,
         created_at: 1,
         type: 1,
@@ -177,6 +178,7 @@ describe('quota adjustment log localization', () => {
         ip: '',
         request_id: 'quota-request',
         upstream_request_id: '',
+        has_audit: false,
         other: JSON.stringify({
           op: { action: scenario.action, params: scenario.params },
         }),
