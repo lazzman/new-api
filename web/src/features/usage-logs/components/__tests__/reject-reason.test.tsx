@@ -29,6 +29,7 @@ const queryClients: QueryClient[] = []
 function makeLog(other: LogOtherData): UsageLog {
   return {
     id: 1,
+    log_id: 1,
     user_id: 1,
     created_at: 1,
     type: 5,
@@ -49,6 +50,7 @@ function makeLog(other: LogOtherData): UsageLog {
     other: JSON.stringify(other),
     request_id: 'req-1',
     upstream_request_id: '',
+    has_audit: false,
   }
 }
 
