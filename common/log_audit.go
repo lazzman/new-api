@@ -148,6 +148,10 @@ func StoreLogAuditResponseAndResetBody(c *gin.Context, resp *http.Response) erro
 	if resp == nil || resp.Body == nil {
 		return nil
 	}
+	if strings.Contains(strings.ToLower(resp.Header.Get("Content-Type")), "text/event-stream") {
+		StoreLogAuditResponseParts(c, resp.Header, "stream", "", 0, false)
+		return nil
+	}
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
