@@ -420,8 +420,9 @@ function buildWarnings(
   if (payload.response?.truncated) warnings.push('Response body was truncated')
   if (request.parseError) warnings.push('Request body is not JSON')
   if (response.parseError) warnings.push('Response body is not JSON')
-  if (!request.raw && !response.raw)
+  if (!request.raw && !response.raw) {
     warnings.push('No request or response body')
+  }
   return warnings
 }
 
@@ -665,8 +666,9 @@ function extractResponsesInput(input: unknown): AuditConversationItem[] {
       })
     )
   }
-  if (input !== undefined)
+  if (input !== undefined) {
     return [toConversationItem(input, 'input', 'input-0')]
+  }
   return []
 }
 
@@ -733,8 +735,9 @@ function extractContentParts(value: unknown): AuditContentPart[] {
   if (Array.isArray(value)) {
     return value.flatMap((part): AuditContentPart[] => {
       if (typeof part === 'string') return [{ type: 'text', text: part }]
-      if (!isRecord(part))
+      if (!isRecord(part)) {
         return [{ type: 'value', text: summarizeJsonValue(part) }]
+      }
       const imageText = imageReferenceFromRecord(part)
       if (imageText) {
         return [
@@ -756,7 +759,7 @@ function extractContentParts(value: unknown): AuditContentPart[] {
       }
       if (isReasoningType(part.type)) {
         const reasoningText = extractReadableReasoningText(part)
-        if (reasoningText)
+        if (reasoningText) {
           return [
             {
               type: stringValue(part.type) || 'reasoning',
@@ -764,6 +767,7 @@ function extractContentParts(value: unknown): AuditContentPart[] {
               renderAsMarkdown: true,
             },
           ]
+        }
         return []
       }
       if (isRecord(part.functionCall)) {
@@ -837,8 +841,9 @@ function extractContentParts(value: unknown): AuditContentPart[] {
     })
   }
   if (typeof value === 'string') return [{ type: 'text', text: value }]
-  if (!isRecord(value))
+  if (!isRecord(value)) {
     return [{ type: 'value', text: summarizeJsonValue(value) }]
+  }
 
   const parts: AuditContentPart[] = []
   const directToolCall = toolEventFromRecord(value)
@@ -1487,7 +1492,7 @@ function summarizeAuditValue(value: unknown, maxLength: number): string {
 }
 
 function summarizeInline(value: string, maxLength: number): string {
-  const normalized = value.replace(/\s+/g, ' ').trim()
+  const normalized = value.replaceAll(/\s+/g, ' ').trim()
   if (!normalized) return ''
   if (normalized.length <= maxLength) return normalized
   return `${normalized.slice(0, maxLength - 1)}...`
@@ -1543,7 +1548,7 @@ function firstDefined(...values: unknown[]): unknown {
 }
 
 function hasOwn(record: JsonObject, key: string): boolean {
-  return Object.prototype.hasOwnProperty.call(record, key)
+  return Object.hasOwn(record, key)
 }
 
 function hasEmbeddingData(value: JsonObject): boolean {
@@ -1769,8 +1774,9 @@ function summarizeModerationResponse(response: JsonObject): string {
         : []
       const parts = [`Result #${index + 1}`]
       if (flagged) parts.push(`flagged=${flagged}`)
-      if (categories.length > 0)
+      if (categories.length > 0) {
         parts.push(`categories=${categories.join(', ')}`)
+      }
       return parts.join(', ')
     })
     .filter(Boolean)
@@ -1810,8 +1816,9 @@ function summarizeImageResponse(response: JsonObject): string {
     const revisedPrompt = firstString(item.revised_prompt)
     if (url) lines.push(`Image #${index + 1}: ${url}`)
     if (b64) lines.push(`Image #${index + 1}: data:image/png;base64,${b64}`)
-    if (revisedPrompt)
+    if (revisedPrompt) {
       lines.push(`Revised Prompt #${index + 1}: ${revisedPrompt}`)
+    }
   }
   return lines.join('\n')
 }
@@ -1835,8 +1842,9 @@ function extractReasoning(
     response.reasoning_details,
     response.thinking
   )
-  if (direct)
+  if (direct) {
     parts.push({ type: 'reasoning', text: direct, renderAsMarkdown: true })
+  }
 
   parts.push(...extractChoiceReasoning(response))
 
@@ -1849,12 +1857,13 @@ function extractReasoning(
       const type = stringValue(item.type)
       if (type.includes('reasoning')) {
         const text = extractReadableReasoningText(item)
-        if (text)
+        if (text) {
           parts.push({
             type: type || 'reasoning',
             text,
             renderAsMarkdown: true,
           })
+        }
       }
     }
   }
@@ -1864,8 +1873,9 @@ function extractReasoning(
       const type = stringValue(item.type)
       if (type.includes('thinking')) {
         const text = extractReadableReasoningText(item.thinking ?? item)
-        if (text)
+        if (text) {
           parts.push({ type: type || 'thinking', text, renderAsMarkdown: true })
+        }
       }
     }
   }
@@ -2146,6 +2156,13 @@ function buildSseSummary(
   }
   const finishReasonValues = [...finishReasons]
 
+  let usage: AuditField[] = []
+  if (usageSource) {
+    usage = extractUsage(usageSource)
+  } else if (nestedUsageSource) {
+    usage = extractUsage(nestedUsageSource)
+  }
+
   return {
     events,
     eventCount: events.length,
@@ -2157,11 +2174,7 @@ function buildSseSummary(
     finishReasons: finishReasonValues,
     reasoning: extractSseReasoning(jsonObjects, protocol),
     toolCalls: aggregateStreamToolCalls(jsonObjects, protocol),
-    usage: usageSource
-      ? extractUsage(usageSource)
-      : nestedUsageSource
-        ? extractUsage(nestedUsageSource)
-        : [],
+    usage,
   }
 }
 
@@ -2321,7 +2334,7 @@ function extractOpenAIResponseImageMarkdown(jsonObjects: JsonObject[]): string {
     images.set(image.id || `image-${images.size + 1}`, image.url)
   }
 
-  return Array.from(images.values())
+  return [...images.values()]
     .map((url, index) => `![Image #${index + 1}](${url})`)
     .join('\n\n')
 }
@@ -2384,8 +2397,9 @@ function extractStreamReasoning(event: JsonObject): AuditContentPart[] {
         ? event.delta.text
         : undefined
     )
-    if (thinking)
+    if (thinking) {
       parts.push({ type: 'thinking', text: thinking, renderAsMarkdown: true })
+    }
   }
   if (isRecord(event.content_block)) {
     const thinking = firstReadableStreamingReasoningText(
@@ -2395,8 +2409,9 @@ function extractStreamReasoning(event: JsonObject): AuditContentPart[] {
       event.content_block.reasoning_details,
       event.content_block
     )
-    if (thinking)
+    if (thinking) {
       parts.push({ type: 'thinking', text: thinking, renderAsMarkdown: true })
+    }
   }
   parts.push(
     ...extractChoiceReasoningWithOptions(event, { preserveWhitespace: true })
@@ -2460,7 +2475,7 @@ function mergeStreamingReasoningParts(
     const text = part.text
     if (!text) continue
 
-    const last = merged[merged.length - 1]
+    const last = merged.at(-1)
     if (
       last &&
       last.type === part.type &&
@@ -3021,8 +3036,9 @@ function toolLifecycleKeys(call: AuditToolCall): string[] {
       type.includes('tool_call') ||
       type.includes('tool_use')
     )
-  )
+  ) {
     return []
+  }
 
   const raw = safeParseJson(call.raw)
   const ids = new Set<string>()
@@ -3042,7 +3058,7 @@ function toolLifecycleKeys(call: AuditToolCall): string[] {
     }
   }
 
-  return Array.from(ids).map((id) => `${call.kind}:${id}`)
+  return [...ids].map((id) => `${call.kind}:${id}`)
 }
 
 function mergeToolLifecycleCalls(
@@ -3306,8 +3322,9 @@ function formatUnknown(value: unknown): string {
 function summarizeJsonValue(value: unknown): string {
   if (value == null) return ''
   if (typeof value === 'string') return value
-  if (typeof value === 'number' || typeof value === 'boolean')
+  if (typeof value === 'number' || typeof value === 'boolean') {
     return String(value)
+  }
   return formatUnknown(value)
 }
 
@@ -3330,8 +3347,9 @@ function arrayValue(value: unknown): unknown[] {
 
 function stringValue(value: unknown): string {
   if (typeof value === 'string') return value
-  if (typeof value === 'number' || typeof value === 'boolean')
+  if (typeof value === 'number' || typeof value === 'boolean') {
     return String(value)
+  }
   return ''
 }
 
