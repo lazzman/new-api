@@ -1,6 +1,7 @@
 package common
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -54,6 +55,39 @@ func TestLogAuditPayloadStoresCompleteBodies(t *testing.T) {
 	require.Equal(t, len(responseBody), parsed.Response.Bytes)
 	require.Len(t, parsed.Response.Raw, len(responseBody))
 	require.False(t, parsed.Response.Truncated)
+}
+
+func TestStoreLogAuditResponseAndResetBodyLeavesEventStreamUnread(t *testing.T) {
+	c := newLogAuditTestContext()
+	body := &logAuditReadCounter{}
+	response := &http.Response{
+		Header: http.Header{"Content-Type": {"text/event-stream; charset=utf-8"}},
+		Body:   body,
+	}
+
+	require.NoError(t, StoreLogAuditResponseAndResetBody(c, response))
+	require.Zero(t, body.reads)
+	require.Same(t, body, response.Body)
+
+	payload, ok := SnapshotLogAuditPayload(c)
+	require.True(t, ok)
+	require.Equal(t, "stream", payload.Response.Type)
+	require.Equal(t, "text/event-stream; charset=utf-8", payload.Response.Headers["Content-Type"][0])
+	require.Zero(t, payload.Response.Bytes)
+	require.Empty(t, payload.Response.Raw)
+}
+
+type logAuditReadCounter struct {
+	reads int
+}
+
+func (r *logAuditReadCounter) Read([]byte) (int, error) {
+	r.reads++
+	return 0, io.EOF
+}
+
+func (r *logAuditReadCounter) Close() error {
+	return nil
 }
 
 func TestLogAuditSnapshotCopiesPayload(t *testing.T) {
