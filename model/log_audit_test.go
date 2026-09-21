@@ -2,6 +2,8 @@ package model
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -12,6 +14,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/schema"
 )
 
 func TestLogAuditPayloadTextUsesLargeTextForMySQL(t *testing.T) {
@@ -45,6 +48,46 @@ func TestRecordLogAuditDetailStoresLargePayload(t *testing.T) {
 	detail, err := GetLogAuditDetail(99001)
 	require.NoError(t, err)
 	require.Len(t, string(detail.Payload), len(largePayload))
+}
+
+func TestLogAuditDetailLargePayloadDatabaseMatrix(t *testing.T) {
+	payload := LogAuditPayloadText(strings.Repeat("x", 2<<20))
+	for _, tc := range []struct {
+		name string
+		env  string
+		open func(string) gorm.Dialector
+	}{
+		{name: "sqlite", open: func(string) gorm.Dialector { return sqlite.Open(":memory:") }},
+		{name: "mysql", env: "AUDIT_MYSQL_DSN", open: mysql.Open},
+		{name: "postgres", env: "AUDIT_POSTGRES_DSN", open: postgres.Open},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dsn := os.Getenv(tc.env)
+			if tc.env != "" && dsn == "" {
+				t.Skip(tc.env + " is not configured")
+			}
+			db, err := gorm.Open(tc.open(dsn), &gorm.Config{
+				NamingStrategy: schema.NamingStrategy{
+					TablePrefix: fmt.Sprintf("lad_%s_%d_", tc.name, time.Now().UnixNano()),
+				},
+			})
+			require.NoError(t, err)
+			t.Cleanup(func() {
+				require.NoError(t, db.Migrator().DropTable(&LogAuditDetail{}))
+			})
+
+			require.NoError(t, db.AutoMigrate(&LogAuditDetail{}))
+			// 连续迁移必须保留同一跨库大文本列定义。
+			require.NoError(t, db.AutoMigrate(&LogAuditDetail{}))
+
+			detail := &LogAuditDetail{LogId: 99003, UserId: 1, Payload: payload}
+			require.NoError(t, db.Create(detail).Error)
+
+			var stored LogAuditDetail
+			require.NoError(t, db.Where("log_id = ?", detail.LogId).First(&stored).Error)
+			require.Equal(t, string(payload), string(stored.Payload))
+		})
+	}
 }
 
 func TestClickHouseLogAuditOperationsAreDisabled(t *testing.T) {
