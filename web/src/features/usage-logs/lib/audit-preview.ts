@@ -257,8 +257,9 @@ function collectImageCandidates(
         'uri',
         'src',
       ].includes(key)
-    )
+    ) {
       continue
+    }
     candidates.push(...collectImageCandidates(childValue, depth - 1))
   }
 
@@ -316,7 +317,7 @@ export function parseStructuredPreview(value: unknown): StructuredPreview {
 }
 
 export function summarizeAuditText(value: unknown, maxLength = 42): string {
-  const normalized = stringifyText(value).replace(/\s+/g, ' ').trim()
+  const normalized = stringifyText(value).replaceAll(/\s+/g, ' ').trim()
   if (!normalized) return ''
   if (normalized.length <= maxLength) return normalized
   return `${normalized.slice(0, maxLength - 1)}...`
@@ -363,9 +364,9 @@ function stringifyText(value: unknown): string {
 function sanitizePreviewUrl(value: string | undefined): string {
   return (value ?? '')
     .trim()
-    .replace(/\\\//g, '/')
-    .replace(/^<|>$/g, '')
-    .replace(/[\\.,;:!?\])}'"]+$/g, '')
+    .replaceAll('\\/', '/')
+    .replaceAll(/^<|>$/g, '')
+    .replaceAll(/[\\.,;:!?\])}'"]+$/g, '')
 }
 
 function firstString(...values: unknown[]): string | undefined {
