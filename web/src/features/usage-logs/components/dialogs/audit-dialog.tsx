@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowDown01Icon,
   BrainIcon,
@@ -10,10 +9,16 @@ import {
   ToolsIcon,
 } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+
 import { Response } from '@/components/ai-elements/response'
+import {
+  sideDrawerContentClassName,
+  sideDrawerFormClassName,
+  sideDrawerHeaderClassName,
+} from '@/components/drawer-layout'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -31,11 +36,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import {
-  sideDrawerContentClassName,
-  sideDrawerFormClassName,
-  sideDrawerHeaderClassName,
-} from '@/components/drawer-layout'
+import { cn } from '@/lib/utils'
+
 import { getLogAuditDetail } from '../../api'
 import type { UsageLog } from '../../data/schema'
 import {
@@ -158,10 +160,7 @@ function InlineIcon(props: { icon: IconSvgElement; className?: string }) {
 
 function escapeVisibleThinkingTags(value: string): string {
   return value.replaceAll(/<\/?think(?:ing)?\b[^>]*>/gi, (tag) =>
-    tag
-      .replaceAll('&', '&amp;')
-      .replaceAll('<', '&lt;')
-      .replaceAll('>', '&gt;')
+    tag.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   )
 }
 
@@ -286,7 +285,7 @@ function buildGatewayCurlHeaders(view: AuditViewModel): string[] {
 }
 
 function shellQuote(value: string): string {
-  return `'${value.replace(/'/g, `'\\''`)}'`
+  return `'${value.replaceAll("'", `'\\''`)}'`
 }
 
 function EmptyBlock(props: { label?: string }) {
@@ -516,7 +515,7 @@ function createObjectUrlFromDataImage(value: string): string {
   if (commaIndex < 0) throw new Error('Invalid data image')
 
   const metadata = value.slice(5, commaIndex)
-  const payload = value.slice(commaIndex + 1).replace(/\s/g, '')
+  const payload = value.slice(commaIndex + 1).replaceAll(/\s/g, '')
   const mimeType = metadata.split(';')[0] || 'image/*'
   const bytes = metadata.includes(';base64')
     ? base64ToBytes(payload)
@@ -549,12 +548,12 @@ function formatPreviewImageSource(image: AuditPreviewImage): string {
 
 function compactLargePayloadForDisplay(value: string): string {
   return value
-    .replace(
+    .replaceAll(
       /(data:image\/[a-zA-Z0-9.+-]+;base64,)([A-Za-z0-9+/=_-]{256,})/g,
       (_match, prefix: string, payload: string) =>
         `${prefix}<base64 image, ${formatApproxBase64Bytes(payload)}>`
     )
-    .replace(
+    .replaceAll(
       /("(?:partial_image_b64|b64_json|image_b64)"\s*:\s*")([A-Za-z0-9+/=_-]{256,})(")/g,
       (_match, before: string, payload: string, after: string) =>
         `${before}<base64 image, ${formatApproxBase64Bytes(payload)}>${after}`
@@ -562,12 +561,13 @@ function compactLargePayloadForDisplay(value: string): string {
 }
 
 function formatApproxBase64Bytes(payload: string): string {
-  const normalized = payload.replace(/\s/g, '')
-  const padding = normalized.endsWith('==')
-    ? 2
-    : normalized.endsWith('=')
-      ? 1
-      : 0
+  const normalized = payload.replaceAll(/\s/g, '')
+  let padding = 0
+  if (normalized.endsWith('==')) {
+    padding = 2
+  } else if (normalized.endsWith('=')) {
+    padding = 1
+  }
   const bytes = Math.max(0, Math.floor((normalized.length * 3) / 4) - padding)
   if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`
   if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -576,9 +576,9 @@ function formatApproxBase64Bytes(payload: string): string {
 
 function removeInlineImageNoise(value: string): string {
   return value
-    .replace(/!\[([^\]]*)]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, '')
-    .replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[^\s)"']+/g, '')
-    .replace(/\n{3,}/g, '\n\n')
+    .replaceAll(/!\[([^\]]*)]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, '')
+    .replaceAll(/data:image\/[a-zA-Z0-9.+-]+;base64,[^\s)"']+/g, '')
+    .replaceAll(/\n{3,}/g, '\n\n')
     .trim()
 }
 
@@ -624,8 +624,9 @@ function SectionTitle(props: {
 
 function FieldGrid(props: { rows: AuditField[] }) {
   const { t } = useTranslation()
-  if (props.rows.length === 0)
+  if (props.rows.length === 0) {
     return <EmptyBlock label={t('No parsed fields')} />
+  }
   return (
     <div className='grid gap-2 sm:grid-cols-2 lg:grid-cols-3'>
       {props.rows.map((row) => (
@@ -645,13 +646,14 @@ function FieldGrid(props: { rows: AuditField[] }) {
 
 function KeyValueList(props: { rows: AuditField[]; translateName?: boolean }) {
   const { t } = useTranslation()
-  if (props.rows.length === 0)
+  if (props.rows.length === 0) {
     return <EmptyBlock label={t('No parsed fields')} />
+  }
   return (
     <div className='border-border/70 overflow-hidden rounded-md border'>
       {props.rows.map((row, index) => (
         <div
-          key={`${row.name}-${index}`}
+          key={`${row.name}:${row.value}`}
           className={cn(
             'grid min-w-0 grid-cols-1 text-xs sm:grid-cols-[minmax(8rem,13rem)_minmax(0,1fr)]',
             index > 0 && 'border-border/70 border-t'
@@ -675,7 +677,7 @@ function HeaderTable(props: { rows: HeaderRow[] }) {
     <div className='border-border/70 overflow-hidden rounded-md border'>
       {props.rows.map((row, index) => (
         <div
-          key={`${row.name}-${index}`}
+          key={`${row.name}:${row.value}`}
           className={cn(
             'grid min-w-0 grid-cols-1 text-xs sm:grid-cols-[minmax(8rem,14rem)_minmax(0,1fr)]',
             index > 0 && 'border-border/70 border-t'
@@ -823,6 +825,20 @@ function ToolEventCard(props: {
 }) {
   const { t } = useTranslation()
   const isResult = props.event.kind === 'result'
+  let borderClassName = 'border-warning/30 bg-warning/5'
+  let badgeVariant: 'default' | 'destructive' | 'secondary' = 'secondary'
+  let eventLabel = t('Tool Call')
+  if (isResult) {
+    if (props.event.isError) {
+      borderClassName = 'border-destructive/30 bg-destructive/5'
+      badgeVariant = 'destructive'
+      eventLabel = t('Tool Error Result')
+    } else {
+      borderClassName = 'border-success/30 bg-success/5'
+      badgeVariant = 'default'
+      eventLabel = t('Tool Result')
+    }
+  }
   const panelValue = isResult
     ? (props.event.outputValue ?? props.event.output)
     : (props.event.inputValue ?? props.event.input)
@@ -833,11 +849,7 @@ function ToolEventCard(props: {
       id={props.targetId}
       className={cn(
         'min-w-0 scroll-mt-4 rounded-md border p-3',
-        isResult
-          ? props.event.isError
-            ? 'border-destructive/30 bg-destructive/5'
-            : 'border-success/30 bg-success/5'
-          : 'border-warning/30 bg-warning/5'
+        borderClassName
       )}
     >
       <div className='mb-3 flex min-w-0 flex-wrap items-center gap-2'>
@@ -846,21 +858,7 @@ function ToolEventCard(props: {
             #{props.sequenceNumber}
           </Badge>
         )}
-        <Badge
-          variant={
-            isResult
-              ? props.event.isError
-                ? 'destructive'
-                : 'default'
-              : 'secondary'
-          }
-        >
-          {isResult
-            ? props.event.isError
-              ? t('Tool Error Result')
-              : t('Tool Result')
-            : t('Tool Call')}
-        </Badge>
+        <Badge variant={badgeVariant}>{eventLabel}</Badge>
         <span className='min-w-0 font-mono text-sm font-medium break-all'>
           {props.event.name || t('Unnamed Tool')}
         </span>
@@ -975,11 +973,11 @@ function ContentParts(props: {
   if (props.parts.length === 0) return <EmptyBlock />
   return (
     <div className='flex flex-col gap-2'>
-      {props.parts.map((part, index) => {
+      {props.parts.map((part) => {
         if (part.toolCall) {
           return (
             <ToolEventCard
-              key={`${part.toolCall.kind}-${part.toolCall.id ?? index}-${part.toolCall.name}`}
+              key={`${part.toolCall.kind}:${part.toolCall.id ?? part.toolCall.raw}:${part.toolCall.name}`}
               event={part.toolCall}
               sequenceNumber={props.sequenceNumber}
               onPreviewOpen={props.onPreviewOpen}
@@ -994,8 +992,32 @@ function ContentParts(props: {
         const showPartType =
           !part.renderAsMarkdown && !isPlainTextPartType(part.type)
 
+        let partBody: ReactNode = null
+        if (structuredTitle) {
+          partBody = (
+            <StructuredPreviewPanel
+              title={structuredTitle}
+              value={part.text}
+              rawValue={part.text}
+              onPreviewOpen={props.onPreviewOpen}
+            />
+          )
+        } else if (!imagePreviewItem) {
+          partBody = (
+            <RenderedContentBlock
+              value={part.text}
+              onPreviewOpen={props.onPreviewOpen}
+              className='p-2'
+              maxHeightClassName='max-h-72'
+            />
+          )
+        }
+
         return (
-          <div key={`${part.type}-${index}`} className='flex flex-col gap-1'>
+          <div
+            key={`${part.type}:${part.text}`}
+            className='flex flex-col gap-1'
+          >
             {imagePreviewItem ? (
               <ImagePartCard
                 type={part.type}
@@ -1009,21 +1031,7 @@ function ContentParts(props: {
                 </Badge>
               )
             )}
-            {structuredTitle ? (
-              <StructuredPreviewPanel
-                title={structuredTitle}
-                value={part.text}
-                rawValue={part.text}
-                onPreviewOpen={props.onPreviewOpen}
-              />
-            ) : imagePreviewItem ? null : (
-              <RenderedContentBlock
-                value={part.text}
-                onPreviewOpen={props.onPreviewOpen}
-                className='p-2'
-                maxHeightClassName='max-h-72'
-              />
-            )}
+            {partBody}
           </div>
         )
       })}
@@ -1128,7 +1136,7 @@ function InlineImageGrid(props: {
     <div className={cn('grid gap-3', props.className)}>
       {props.images.map((image, index) => (
         <InlinePreviewImage
-          key={`${image.id}-${index}`}
+          key={image.id}
           image={image}
           label={`${t('Image')} #${index + 1}`}
           onClick={
@@ -1239,13 +1247,14 @@ function ToolDefinitions(props: {
   onPreviewOpen?: PreviewOpenHandler
 }) {
   const { t } = useTranslation()
-  if (props.tools.length === 0)
+  if (props.tools.length === 0) {
     return <EmptyBlock label={t('No tools parsed')} />
+  }
   return (
     <div className='flex flex-col gap-2'>
       {props.tools.map((tool, index) => (
         <div
-          key={`${tool.name}-${index}`}
+          key={`${tool.name}:${tool.type}:${tool.raw}`}
           id={
             props.targetPrefix
               ? toolDefinitionTargetId(props.targetPrefix, tool, index)
@@ -1320,7 +1329,7 @@ function ToolParameterTable(props: { rows: ToolParameterRow[] }) {
       </div>
       {props.rows.map((row, index) => (
         <div
-          key={`${row.name}-${index}`}
+          key={`${row.name}:${row.type}:${row.required}:${row.description}`}
           className={cn(
             'grid min-w-[48rem] grid-cols-[minmax(9rem,1fr)_8rem_6rem_minmax(18rem,2fr)] text-xs',
             index > 0 && 'border-border/70 border-t'
@@ -1468,8 +1477,9 @@ function ToolCalls(props: {
   onPreviewOpen?: PreviewOpenHandler
 }) {
   const { t } = useTranslation()
-  if (props.calls.length === 0)
+  if (props.calls.length === 0) {
     return <EmptyBlock label={t('No tool calls parsed')} />
+  }
   return (
     <div id={props.targetId} className='flex scroll-mt-4 flex-col gap-2'>
       {props.calls.map((call, index) => (
@@ -2039,8 +2049,8 @@ function toolCallTargetId(
 
 function sanitizeDomId(value: string): string {
   const normalized = value
-    .replace(/[^a-zA-Z0-9_-]+/g, '-')
-    .replace(/^-|-$/g, '')
+    .replaceAll(/[^a-zA-Z0-9_-]+/g, '-')
+    .replaceAll(/^-|-$/g, '')
   return normalized || 'item'
 }
 
@@ -2182,7 +2192,7 @@ export function AuditDialog(props: AuditDialogProps) {
     setDetail(null)
     setActiveSection('overview')
     setActiveTargetId(undefined)
-    getLogAuditDetail(logId, props.isAdmin)
+    void getLogAuditDetail(logId, props.isAdmin)
       .then((result) => {
         if (result.success && result.data) {
           setDetail(result.data)
@@ -2232,19 +2242,21 @@ export function AuditDialog(props: AuditDialogProps) {
         </SheetHeader>
 
         <div className='flex min-h-0 flex-1 flex-col overflow-hidden'>
-          {loading ? (
+          {loading && (
             <div className='text-muted-foreground flex min-h-0 flex-1 items-center justify-center gap-2 text-sm'>
               <InlineIcon icon={Loading03Icon} className='animate-spin' />
               {t('Loading')}
             </div>
-          ) : view ? (
+          )}
+          {!loading && view && (
             <AuditDrawerBody
               view={view}
               activeSection={activeSection}
               activeTargetId={activeTargetId}
               onSectionChange={handleSectionChange}
             />
-          ) : (
+          )}
+          {!loading && !view && (
             <div className='text-muted-foreground flex min-h-0 flex-1 items-center justify-center px-4 py-12 text-center text-sm'>
               {t('No audit details')}
             </div>

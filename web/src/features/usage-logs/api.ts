@@ -91,7 +91,9 @@ export async function getLogAuditDetail(
   logId: number,
   isAdmin: boolean
 ): Promise<{ success: boolean; message?: string; data?: LogAuditDetail }> {
-  const path = isAdmin ? `/api/log/${logId}/audit` : `/api/log/self/${logId}/audit`
+  const path = isAdmin
+    ? `/api/log/${logId}/audit`
+    : `/api/log/self/${logId}/audit`
   const res = await api.get(path)
   return res.data
 }
