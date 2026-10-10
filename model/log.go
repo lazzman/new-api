@@ -703,7 +703,7 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 	}
 	if err = attachLogAuditAvailability(logs); err != nil {
 		common.SysError("failed to attach user log audit availability: " + err.Error())
-		return nil, 0, errors.New("查询日志失败")
+		return nil, 0, common.NewMessage("Failed to query logs")
 	}
 
 	formatUserLogs(logs, startIdx)
