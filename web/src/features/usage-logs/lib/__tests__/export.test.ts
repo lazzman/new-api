@@ -24,6 +24,7 @@ import { getLogCsvHeader, getLogCsvRow, toCsvLine } from '../export'
 
 const consumeLog: UsageLog = {
   id: 1,
+  log_id: 1,
   user_id: 7,
   created_at: new Date(2026, 9, 12, 8, 30, 5).getTime() / 1000,
   type: 2,
@@ -48,6 +49,7 @@ const consumeLog: UsageLog = {
   }),
   request_id: 'req-1',
   upstream_request_id: '',
+  has_audit: false,
 }
 
 async function chineseTranslator() {
