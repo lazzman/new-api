@@ -112,7 +112,7 @@ func TestLogExportDatabaseMatrix(t *testing.T) {
 				t.Setenv("LOG_SQL_DSN", isolatedDSN)
 				require.NoError(t, model.InitLogDB())
 			} else {
-				require.NoError(t, db.AutoMigrate(&model.Log{}))
+				require.NoError(t, db.AutoMigrate(&model.Log{}, &model.LogAuditDetail{}))
 			}
 			versionSQL := "SELECT version()"
 			if tc.kind == "sqlite" {
@@ -154,7 +154,7 @@ func TestLogExportRules(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	db, _ := newAuditTestDatabase(t, "sqlite", "")
 	useLogExportDatabases(t, db, db, common.DatabaseTypeSQLite, common.DatabaseTypeSQLite)
-	require.NoError(t, db.AutoMigrate(&model.Channel{}, &model.Log{}, &model.QuotaData{}))
+	require.NoError(t, db.AutoMigrate(&model.Channel{}, &model.Log{}, &model.LogAuditDetail{}, &model.QuotaData{}))
 	now := time.Now().Unix()
 	seedExportLogs(t, db, db, now)
 	logSetting := operation_setting.GetLogSetting()
