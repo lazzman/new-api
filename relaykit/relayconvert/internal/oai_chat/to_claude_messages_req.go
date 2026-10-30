@@ -275,6 +275,14 @@ func OpenAIChatRequestToClaudeMessages(c context.Context, info convmeta.Meta, te
 							Text: kitutil.GetPointer[string](mediaMessage.Text),
 						})
 					}
+				case dto.ContentTypeFile:
+					block, err := openAIFileContentToClaudeMessage(mediaMessage)
+					if err != nil {
+						return nil, err
+					}
+					if block != nil {
+						claudeMediaMessages = append(claudeMediaMessages, *block)
+					}
 				default:
 					source := mediaMessage.ToFileSource()
 					if source == nil {
